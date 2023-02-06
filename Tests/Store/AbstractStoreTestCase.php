@@ -21,7 +21,7 @@ use Symfony\Component\Semaphore\PersistingStoreInterface;
  * @author Jérémy Derussé <jeremy@derusse.com>
  * @author Grégoire Pineau <lyrixx@lyrixx.info>
  */
-abstract class AbstractStoreTest extends TestCase
+abstract class AbstractStoreTestCase extends TestCase
 {
     abstract protected function getStore(): PersistingStoreInterface;
 
