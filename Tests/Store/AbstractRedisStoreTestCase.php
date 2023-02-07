@@ -17,7 +17,7 @@ use Symfony\Component\Semaphore\Store\RedisStore;
 /**
  * @author Jérémy Derussé <jeremy@derusse.com>
  */
-abstract class AbstractRedisStoreTest extends AbstractStoreTest
+abstract class AbstractRedisStoreTestCase extends AbstractStoreTestCase
 {
     abstract protected function getRedisConnection(): \Redis|\RedisArray|\RedisCluster|\Predis\ClientInterface;
 
