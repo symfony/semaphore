@@ -12,6 +12,7 @@
 namespace Symfony\Component\Semaphore\Store;
 
 use Relay\Relay;
+use Relay\Cluster as RelayCluster;
 use Symfony\Component\Semaphore\Exception\InvalidArgumentException;
 use Symfony\Component\Semaphore\Exception\SemaphoreAcquiringException;
 use Symfony\Component\Semaphore\Exception\SemaphoreExpiredException;
@@ -27,7 +28,7 @@ use Symfony\Component\Semaphore\PersistingStoreInterface;
 class RedisStore implements PersistingStoreInterface
 {
     public function __construct(
-        private \Redis|Relay|\RedisArray|\RedisCluster|\Predis\ClientInterface $redis,
+        private \Redis|Relay|RelayCluster|\RedisArray|\RedisCluster|\Predis\ClientInterface $redis,
     ) {
     }
 
@@ -158,7 +159,7 @@ class RedisStore implements PersistingStoreInterface
 
     private function evaluate(string $script, string $resource, array $args): mixed
     {
-        if ($this->redis instanceof \Redis || $this->redis instanceof Relay || $this->redis instanceof \RedisCluster) {
+        if ($this->redis instanceof \Redis || $this->redis instanceof Relay || $this->redis instanceof RelayCluster || $this->redis instanceof \RedisCluster) {
             return $this->redis->eval($script, array_merge([$resource], $args), 1);
         }
 
