@@ -240,7 +240,7 @@ class SemaphoreTest extends TestCase
 
     public function testExpiration()
     {
-        $store = $this->createMock(PersistingStoreInterface::class);
+        $store = $this->createStub(PersistingStoreInterface::class);
 
         $key = new Key('key', 1);
         $semaphore = new Semaphore($key, $store);
@@ -257,7 +257,7 @@ class SemaphoreTest extends TestCase
      */
     public function testExpirationResetAfter()
     {
-        $store = $this->createMock(PersistingStoreInterface::class);
+        $store = $this->createStub(PersistingStoreInterface::class);
 
         $key = new Key('key', 1);
         $semaphore = new Semaphore($key, $store, 1);
