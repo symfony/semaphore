@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+8.1
+---
+
+ * Add `SemaphoreKeyNormalizer`
+
 7.4
 ---
 
