@@ -30,6 +30,21 @@ final class LockStore implements PersistingStoreInterface
     ) {
     }
 
+    /**
+     * Acquires `weight` slots through the underlying {@see LockFactory} and
+     * stores the live {@see LockInterface} instances on the {@see Key}.
+     *
+     * Side effects on success:
+     *  - per-store state: an array of acquired {@see LockInterface} instances
+     *    is attached via {@see Key::setState()};
+     *  - the key is flagged as unserializable via {@see Key::markUnserializable()}
+     *    because the attached lock instances are not portable across processes;
+     *    a subsequent `serialize($key)` (or normalization) will throw
+     *    {@see \Symfony\Component\Semaphore\Exception\UnserializableKeyException}.
+     *
+     * Calling `save()` on a key that already holds state from this store is a
+     * no-op and does not re-flag the key.
+     */
     public function save(Key $key, float $ttlInSecond): void
     {
         if ($this->getExistingLocks($key)) {
@@ -39,7 +54,7 @@ final class LockStore implements PersistingStoreInterface
         $locks = $this->createLocks($key, $ttlInSecond);
 
         $key->setState(__CLASS__, $locks);
-        $key->markUnserializable();
+        $key->markUnserializable(__CLASS__);
     }
 
     public function delete(Key $key): void
@@ -47,9 +62,32 @@ final class LockStore implements PersistingStoreInterface
         $this->releaseLocks($this->getExistingLocks($key), $key);
     }
 
+    /**
+     * Checks that at least `weight` slots are still acquired on the backend.
+     *
+     * This implementation queries the underlying lock store once per slot held
+     * by the key (O(weight) backend round-trips) and mutates the key's state
+     * to drop references to slots whose lock instance reports as expired or
+     * no longer acquired. As a consequence, this method may transition the
+     * key from "acquired" to "lost" without a `delete()` call.
+     */
     public function exists(Key $key): bool
     {
-        return \count($this->getExistingLocks($key)) >= $key->getWeight();
+        $locks = $this->getExistingLocks($key);
+        $acquired = [];
+        foreach ($locks as $lock) {
+            if (!$lock->isExpired() && $lock->isAcquired()) {
+                $acquired[] = $lock;
+            }
+        }
+
+        if ($acquired) {
+            $key->setState(__CLASS__, $acquired);
+        } elseif ($locks) {
+            $key->removeState(__CLASS__);
+        }
+
+        return \count($acquired) >= $key->getWeight();
     }
 
     public function putOffExpiration(Key $key, float $ttlInSecond): void
@@ -63,7 +101,13 @@ final class LockStore implements PersistingStoreInterface
         }
 
         foreach ($locks as $lock) {
-            $lock->refresh($ttlInSecond);
+            try {
+                $lock->refresh($ttlInSecond);
+            } catch (\Throwable $e) {
+                $this->releaseLocks($locks, $key);
+
+                throw new SemaphoreExpiredException($key, 'Failed to refresh one or multiple locks: '.$e->getMessage(), $e);
+            }
 
             if ($lock->isExpired()) {
                 $this->releaseLocks($locks, $key);

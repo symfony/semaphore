@@ -40,6 +40,12 @@ class StoreFactoryTest extends TestCase
         if (class_exists(\Redis::class)) {
             yield [new \Redis(), RedisStore::class];
         }
+        if (class_exists(\Relay\Relay::class)) {
+            yield [(new \ReflectionClass(\Relay\Relay::class))->newInstanceWithoutConstructor(), RedisStore::class];
+        }
+        if (class_exists(\Relay\Cluster::class)) {
+            yield [(new \ReflectionClass(\Relay\Cluster::class))->newInstanceWithoutConstructor(), RedisStore::class];
+        }
         if (class_exists(\Redis::class) && class_exists(AbstractAdapter::class)) {
             yield ['redis://localhost', RedisStore::class];
             yield ['redis://localhost?lazy=1', RedisStore::class];

@@ -25,6 +25,21 @@ use Symfony\Component\Semaphore\PersistingStoreInterface;
  */
 class StoreFactory
 {
+    /**
+     * Creates a {@see PersistingStoreInterface} from a connection object or DSN.
+     *
+     * Accepted connection types:
+     *  - {@see LockFactory}                    -> {@see LockStore}
+     *  - \Redis, \RedisArray, \RedisCluster    -> {@see RedisStore}
+     *  - {@see Relay}, {@see RelayCluster} (when the Relay extension is loaded)
+     *  - {@see \Predis\ClientInterface}
+     *
+     * Accepted DSN schemes (requires symfony/cache):
+     *  - `redis://`, `rediss://`, `valkey://`, `valkeys://`           -> {@see RedisStore}
+     *
+     * @throws InvalidArgumentException When the connection type or DSN scheme is unsupported,
+     *                                  or when a required dependency (e.g. symfony/cache) is missing
+     */
     public static function createStore(#[\SensitiveParameter] object|string $connection): PersistingStoreInterface
     {
         switch (true) {
