@@ -129,6 +129,10 @@ final class Key
 
     public function __unserialize(array $data): void
     {
+        if (($data['resource'] ?? $data["\0".self::class."\0resource"] ?? null) instanceof \Stringable) {
+            throw new \BadMethodCallException('Cannot unserialize '.self::class);
+        }
+
         $this->__construct(
             $data['resource'] ?? $data["\0".self::class."\0resource"],
             $data['limit'] ?? $data["\0".self::class."\0limit"],
